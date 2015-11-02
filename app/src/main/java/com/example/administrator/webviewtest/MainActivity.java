@@ -1,15 +1,25 @@
 package com.example.administrator.webviewtest;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
+
+import org.htmlcleaner.HtmlCleaner;
+import org.htmlcleaner.TagNode;
+
+import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,13 +41,68 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        initAtivityUI();
+        initActivityUI();
     }
 
-    private void initAtivityUI() {
+    private void initActivityUI() {
         mWebView = (WebView) findViewById(R.id.web);
-        mWebView.setWebViewClient(new WebViewClient());
-        mWebView.loadUrl("http://www.baidu.com");
+//        mWebView.loadUrl("file:///android_asset/web.html");
+        WebSettings webSettings = mWebView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+
+//        mWebView.setWebViewClient(new K3WebViewClient());
+//        mWebView.loadUrl("http://github201407.github.io/");
+
+//
+        mWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
+        String html = "<html>\n" +
+                "<body>\n" +
+                "\n" +
+                "<h1>My First Heading</h1>\n" +
+                "\n" +
+                "<p>My first paragraph.</p>\n" +
+                "<input type=\"button\" value=\"Say hello\" onClick=\"showAndroidToast()\" />\n" +
+                "\n" +
+                "<script type=\"text/javascript\">\n" +
+                "    function showAndroidToast() {\n" +
+                "        Android.showToast('Hello Android!');\n" +
+                "    }\n" +
+                "</script>\n" +
+                "</body>\n" +
+                "</html>";
+
+        HtmlCleaner htmlCleaner = new HtmlCleaner();
+        TagNode node = htmlCleaner.clean(html);
+        TagNode body= node.getElementsByName("body",true)[0];
+        body.addAttribute("bgcolor", "red");
+        TagNode js = node.getElementsByName("script",true)[0];
+        body.removeChild(js);
+        TagNode js2 = new TagNode("script");
+        String values = "<script type=\"text/javascript\">\n" +
+                "    function showAndroidToast() {\n" +
+                "        Android.showToast('Hello');\n" +
+                "    }\n";
+        js.addAttribute("type", "text/javascript");
+        js.addAttribute("value", values);
+        body.addChild(js2);
+        html = htmlCleaner.getInnerHtml(node);
+        mWebView.loadDataWithBaseURL("null", html, "text/html", "utf-8", null);
+    }
+
+    public void useCleaner(){
+
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // Check if the key event was the Back button and if there's history
+        if ((keyCode == KeyEvent.KEYCODE_BACK) && mWebView.canGoBack()) {
+            mWebView.goBack();
+            return true;
+        }
+        // If it wasn't the Back key or there's no web page history, bubble up to the default
+        // system behavior (probably exit the activity)
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
@@ -60,5 +125,24 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public class WebAppInterface {
+        Context mContext;
+
+        /**
+         * Instantiate the interface and set the context
+         */
+        WebAppInterface(Context c) {
+            mContext = c;
+        }
+
+        /**
+         * Show a toast from the web page
+         */
+        @JavascriptInterface
+        public void showToast(String toast) {
+            Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show();
+        }
     }
 }
