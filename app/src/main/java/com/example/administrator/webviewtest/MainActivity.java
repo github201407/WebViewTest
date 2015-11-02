@@ -13,13 +13,13 @@ import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import org.htmlcleaner.HtmlCleaner;
 import org.htmlcleaner.TagNode;
 
-import java.net.URL;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,50 +46,64 @@ public class MainActivity extends AppCompatActivity {
 
     private void initActivityUI() {
         mWebView = (WebView) findViewById(R.id.web);
-//        mWebView.loadUrl("file:///android_asset/web.html");
         WebSettings webSettings = mWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
+
+        String html = "<html>\n" +
+                "<head>\n" +
+                "    <link rel=stylesheet href='css/style.css'>\n" +
+                "    <title>我的第一个 HTML 页面</title>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "<p><img style='width: 100%;' src='ic_launcher.png'/></p>\n" +
+                "<p>body 元素的内容会显示在浏览器中。</p>\n" +
+                "<p>title 元素的内容会显示在浏览器的标题栏中。</p>\n" +
+                "</body>\n" +
+                "</html>";
+        mWebView.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "utf-8", null);
+
+//        mWebView.loadUrl("file:///android_asset/web.html");
 
 //        mWebView.setWebViewClient(new K3WebViewClient());
 //        mWebView.loadUrl("http://github201407.github.io/");
 
 //
-        mWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
-        String html = "<html>\n" +
-                "<body>\n" +
-                "\n" +
-                "<h1>My First Heading</h1>\n" +
-                "\n" +
-                "<p>My first paragraph.</p>\n" +
-                "<input type=\"button\" value=\"Say hello\" onClick=\"showAndroidToast()\" />\n" +
-                "\n" +
-                "<script type=\"text/javascript\">\n" +
-                "    function showAndroidToast() {\n" +
-                "        Android.showToast('Hello Android!');\n" +
-                "    }\n" +
-                "</script>\n" +
-                "</body>\n" +
-                "</html>";
-
-        HtmlCleaner htmlCleaner = new HtmlCleaner();
-        TagNode node = htmlCleaner.clean(html);
-        TagNode body= node.getElementsByName("body",true)[0];
-        body.addAttribute("bgcolor", "red");
-        TagNode js = node.getElementsByName("script",true)[0];
-        body.removeChild(js);
-        TagNode js2 = new TagNode("script");
-        String values = "<script type=\"text/javascript\">\n" +
-                "    function showAndroidToast() {\n" +
-                "        Android.showToast('Hello');\n" +
-                "    }\n";
-        js.addAttribute("type", "text/javascript");
-        js.addAttribute("value", values);
-        body.addChild(js2);
-        html = htmlCleaner.getInnerHtml(node);
-        mWebView.loadDataWithBaseURL("null", html, "text/html", "utf-8", null);
+//        mWebView.addJavascriptInterface(new WebAppInterface(this), "Android");
+//        String html = "<html>\n" +
+//                "<body>\n" +
+//                "\n" +
+//                "<h1>My First Heading</h1>\n" +
+//                "\n" +
+//                "<p>My first paragraph.</p>\n" +
+//                "<input type=\"button\" value=\"Say hello\" onClick=\"showAndroidToast()\" />\n" +
+//                "\n" +
+//                "<script type=\"text/javascript\">\n" +
+//                "    function showAndroidToast() {\n" +
+//                "        Android.showToast('Hello Android!');\n" +
+//                "    }\n" +
+//                "</script>\n" +
+//                "</body>\n" +
+//                "</html>";
+//
+//        HtmlCleaner htmlCleaner = new HtmlCleaner();
+//        TagNode node = htmlCleaner.clean(html);
+//        TagNode body = node.getElementsByName("body", true)[0];
+//        body.addAttribute("bgcolor", "red");
+//        TagNode js = node.getElementsByName("script", true)[0];
+//        body.removeChild(js);
+//        TagNode js2 = new TagNode("script");
+//        String values = "<script type=\"text/javascript\">\n" +
+//                "    function showAndroidToast() {\n" +
+//                "        Android.showToast('Hello');\n" +
+//                "    }\n";
+//        js.addAttribute("type", "text/javascript");
+//        js.addAttribute("value", values);
+//        body.addChild(js2);
+//        html = htmlCleaner.getInnerHtml(node);
+//        mWebView.loadDataWithBaseURL("null", html, "text/html", "utf-8", null);
     }
 
-    public void useCleaner(){
+    public void useCleaner() {
 
     }
 
