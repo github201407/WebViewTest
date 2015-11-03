@@ -26,8 +26,11 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView mWebView;
     String localHtml = "<html>\n" +
+            "<head>\n" +
+            "<link rel=stylesheet href='css/style.css'>\n" +
+            "<title>我的第一个 HTML 页面</title>\n" +
+            "</head>\n" +
             "<body>\n" +
-            "\n" +
             "<h1>My First Heading</h1>\n" +
             "\n" +
             "<p>My first paragraph.</p>\n" +
@@ -61,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadGithub() {
-        mWebView.loadUrl("http://github201407.github.io/");
         mWebView.setWebViewClient(K3WebViewClient.newInstance());
+        mWebView.loadUrl("http://github201407.github.io/");
     }
 
     private void initUI() {
@@ -98,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
         TagNode node = htmlCleaner.clean(localHtml);
         TagNode body = node.getElementsByName("body", true)[0];
         body.addAttribute("bgcolor", "red");
+        TagNode h1 = node.getElementsByName("h1", true)[0];
+        h1.addAttribute("color", "white");
         TagNode js = node.getElementsByName("script", true)[0];
         body.removeChild(js);
         /* add <script /> TagNode */
@@ -169,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             return true;
         }if (id == R.id.local_1)
-            mWebView.loadDataWithBaseURL("null", localHtml, "text/html", "utf-8", null);
+            mWebView.loadDataWithBaseURL("file:///android_asset/", localHtml, "text/html", "utf-8", null);
         else if (id == R.id.local_2)
             localCssJs();
         else if (id == R.id.remote_1) {
