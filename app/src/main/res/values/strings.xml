@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">WebViewTest</string>
     <string name="action_settings">Settings</string>
+    <string name="action_local1">本地网页</string>
+    <string name="action_local2">本地修改js css</string>
+    <string name="action_remote1">github网页</string>
+    <string name="action_remote2">github修改css</string>
 </resources>

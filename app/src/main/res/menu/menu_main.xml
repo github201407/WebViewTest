@@ -1,6 +1,32 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
-    <item android:id="@+id/action_settings" android:title="@string/action_settings"
-        android:orderInCategory="100" app:showAsAction="never" />
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+    <item
+        android:id="@+id/local_1"
+        android:orderInCategory="100"
+        android:title="@string/action_local1"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/local_2"
+        android:orderInCategory="100"
+        android:title="@string/action_local2"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/remote_1"
+        android:orderInCategory="100"
+        android:title="@string/action_remote1"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/remote_2"
+        android:orderInCategory="100"
+        android:title="@string/action_remote2"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
 </menu>

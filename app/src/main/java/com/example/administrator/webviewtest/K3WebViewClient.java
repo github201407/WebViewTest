@@ -1,8 +1,15 @@
 package com.example.administrator.webviewtest;
 
+import android.annotation.TargetApi;
+import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
+import android.provider.Browser;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebResourceError;
@@ -15,13 +22,23 @@ import com.example.administrator.webviewtest.Helper.HtmlConverter;
 import com.example.administrator.webviewtest.Helper.HtmlSanitizer;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Created by Administrator on 2015/11/2.
  */
-public class K3WebViewClient extends WebViewClient {
+public abstract class K3WebViewClient extends WebViewClient {
 
-    public K3WebViewClient() {
+    private static final WebResourceResponse RESULT_DO_NOT_INTERCEPT = null;
+    private static final WebResourceResponse RESULT_DUMMY_RESPONSE = new WebResourceResponse(null, null, null);
+    private static final String TAG = "K3WebViewClient";
+
+    public static WebViewClient newInstance() {
+        if (Build.VERSION.SDK_INT < 21) {
+            return new PreLollipopWebViewClient();
+        }
+
+        return new LollipopWebViewClient();
     }
 
     /**
@@ -39,17 +56,33 @@ public class K3WebViewClient extends WebViewClient {
      * and handle the url itself, otherwise return false.
      */
     @Override
-    public boolean shouldOverrideUrlLoading(WebView view, String url) {
-//        return super.shouldOverrideUrlLoading(view, url);
-
-        if (Uri.parse(url).getHost().equals("github201407.github.io")) {
-            // This is my web site, so do not override; let my WebView load the page
+    public boolean shouldOverrideUrlLoading(WebView webView, String url) {
+        Uri uri = Uri.parse(url);
+        if ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) {
             return false;
         }
-        // Otherwise, the link is not for a page on my site, so launch another Activity that handles URLs
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        view.getContext().startActivity(intent);
-        return true;
+
+        Context context = webView.getContext();
+        Intent intent = createBrowserViewIntent(uri, context);
+        addActivityFlags(intent);
+
+        boolean overridingUrlLoading = false;
+        try {
+            context.startActivity(intent);
+            overridingUrlLoading = true;
+        } catch (ActivityNotFoundException ex) {
+            // If no application can handle the URL, assume that the WebView can handle it.
+        }
+
+        return overridingUrlLoading;
+    }
+
+    private Intent createBrowserViewIntent(Uri uri, Context context) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        intent.addCategory(Intent.CATEGORY_BROWSABLE);
+        intent.putExtra(Browser.EXTRA_APPLICATION_ID, context.getPackageName());
+        intent.putExtra(Browser.EXTRA_CREATE_NEW_TAB, true);
+        return intent;
     }
 
     /**
@@ -97,40 +130,6 @@ public class K3WebViewClient extends WebViewClient {
     }
 
     /**
-     * Notify the host application of a resource request and allow the
-     * application to return the data.  If the return value is null, the WebView
-     * will continue to load the resource as usual.  Otherwise, the return
-     * response and data will be used.  NOTE: This method is called on a thread
-     * other than the UI thread so clients should exercise caution
-     * when accessing private data or the view system.
-     *
-     * @param view    The {@link WebView} that is requesting the
-     *                resource.
-     * @param request Object containing the details of the request.
-     * @return A {@link WebResourceResponse} containing the
-     * response information or null if the WebView should load the
-     * resource itself.
-     */
-    @Override
-    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-        return super.shouldInterceptRequest(view, request);
-
-       /* if (url.startsWith(scheme))
-            try
-            {
-                return new WebResourceResponse(url.endsWith("js") ? "text/javascript" : "text/css", "utf-8",
-                        Foo.this.getAssets().open(url.substring(scheme.length())));
-            }
-            catch (IOException e)
-            {
-                Log.e(getClass().getSimpleName(), e.getMessage(), e);
-            }
-
-        return null;
-        }*/
-    }
-
-    /**
      * Report web resource loading error to the host application. These errors usually indicate
      * inability to connect to the server. Note that unlike the deprecated version of the callback,
      * the new version will be called for any resource (iframe, image, etc), not just for the main
@@ -154,5 +153,62 @@ public class K3WebViewClient extends WebViewClient {
 
         String sanitizedContent = HtmlSanitizer.sanitize(content);
         view.loadDataWithBaseURL("null", sanitizedContent, "text/html", "utf-8", null);
+    }
+
+    protected abstract void addActivityFlags(Intent intent);
+
+    protected WebResourceResponse shouldInterceptRequest(WebView webView, Uri uri) {
+        String path = uri.getPath();
+        if (path == null || !path.endsWith(".css")) {
+            return RESULT_DO_NOT_INTERCEPT;
+        }
+
+        Context context = webView.getContext();
+//        ContentResolver contentResolver = context.getContentResolver();
+        try {
+//            new WebResourceResponse(url.endsWith("js") ? "text/javascript" : "text/css", "utf-8",
+//                    Foo.this.getAssets().open(url.substring(scheme.length())));
+            String mimeType = "text/html";
+            InputStream inputStream = context.getAssets().open("style.css");
+//
+            return new WebResourceResponse(mimeType, null, inputStream);
+        } catch (Exception e) {
+            Log.e(TAG, "Error while intercepting URI: " + uri, e);
+            return RESULT_DUMMY_RESPONSE;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static class PreLollipopWebViewClient extends K3WebViewClient {
+        protected PreLollipopWebViewClient() {
+            super();
+        }
+
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView webView, String url) {
+            return shouldInterceptRequest(webView, Uri.parse(url));
+        }
+
+        @Override
+        protected void addActivityFlags(Intent intent) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private static class LollipopWebViewClient extends K3WebViewClient {
+        protected LollipopWebViewClient() {
+            super();
+        }
+
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView webView, WebResourceRequest request) {
+            return shouldInterceptRequest(webView, request.getUrl());
+        }
+
+        @Override
+        protected void addActivityFlags(Intent intent) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
+        }
     }
 }
